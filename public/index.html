@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        pre {
+            background-color: #2d2d2d;
+            color: #f8f8f2;
+            padding: 10px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: monospace;
+            margin: 5px 0;
+        }
+
+        #codeButton {
+            padding: 10px 14px;
+            border: 1px solid #ccc;
+            border-radius: 25px;
+            background-color: #f8f9fa;
+            color: #333;
+            font-size: 14px;
+            cursor: pointer;
+            margin-right: 10px;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+        }
+
+        #codeButton:hover {
+            background-color: #e2e6ea;
+            border-color: #bbb;
+        }
+
+        .copy-button {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            font-size: 12px;
+            padding: 4px 8px;
+            border: none;
+            border-radius: 4px;
+            background-color: #20c997;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            z-index: 1;
+        }
+
+        .copy-button:hover {
+            background-color: #17a2b8;
+        }
+
+
+        #chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        /* User status bar */
+        #user-status {
+            background-color: #fff;
+            padding: 10px 20px;
+            border-bottom: 1px solid #ccc;
+            font-size: 14px;
+            color: #666;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        #user-count {
+            font-weight: 500;
+        }
+
+        #color-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #user-color-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            box-shadow: 0 0 0 1px #ccc;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        li {
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            border-radius: 15px;
+            color: #fff;
+            max-width: 70%;
+            word-wrap: break-word;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .message {
+            align-self: flex-start;
+            border-bottom-left-radius: 5px;
+        }
+
+        .message.self {
+            align-self: flex-end;
+            border-bottom-right-radius: 5px;
+        }
+
+        /* Dark text for light colored messages */
+        .message.dark-text {
+            color: #333 !important;
+        }
+
+        .file-message {
+            align-self: flex-start;
+        }
+
+        .file-message a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .file-message a:hover {
+            text-decoration: underline;
+        }
+
+        /* Dark text for light colored file messages */
+        .file-message.dark-text a {
+            color: #333 !important;
+        }
+
+        #form {
+            display: flex;
+            padding: 15px;
+            background-color: #fff;
+            border-top: 1px solid #ccc;
+            flex-shrink: 0;
+            box-sizing: border-box;
+        }
+
+        #input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 25px;
+            margin-right: 10px;
+            outline: none;
+            font-size: 14px;
+        }
+
+        #input:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+        }
+
+        #fileInput {
+            margin-right: 10px;
+        }
+
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 25px;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-weight: 500;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        /* Scroll indicator */
+        .scroll-indicator {
+            position: fixed;
+            bottom: 100px;
+            right: 30px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            display: none;
+            cursor: pointer;
+            z-index: 1000;
+        }
+
+        .scroll-indicator.show {
+            display: block;
+        }
+
+        /* Add a subtle scroll indicator for the chat area */
+        #chat-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #chat-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        #chat-container::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+        #chat-container::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        /* Connection status indicator */
+        .connection-status {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 500;
+            z-index: 1000;
+        }
+
+        .connection-status.connected {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .connection-status.disconnected {
+            background-color: #dc3545;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div id="user-status">
+        <span id="user-count">Loading...</span>
+        <div id="color-indicator">
+            <span>Your color:</span>
+            <div id="user-color-dot"></div>
+        </div>
+    </div>
+    
+    <div class="connection-status" id="connectionStatus">Connecting...</div>
+    
+    <div id="chat-container">
+        <ul id="messages"></ul>
+    </div>
+    <div id="scrollIndicator" class="scroll-indicator">↓ New messages</div>
+    <form id="form" enctype="multipart/form-data">
+        <!-- <input id="input" autocomplete="off" placeholder="Type your message here..." /> -->
+        <textarea id="input" placeholder="Type your message here..." rows="2" style="resize: none;"></textarea>
+        <!-- <button type="button" id="codeButton">Code</button> -->
+        <button type="button" id="codeButton" title="Insert code block"> &lt;/&gt; </button>
+        <input type="file" id="fileInput" />
+        <button type="submit">Send</button>
+    </form>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        const form = document.getElementById('form');
+        const input = document.getElementById('input');
+        const fileInput = document.getElementById('fileInput');
+        const messages = document.getElementById('messages');
+        const chatContainer = document.getElementById('chat-container');
+        const scrollIndicator = document.getElementById('scrollIndicator');
+        const userCountElement = document.getElementById('user-count');
+        const userColorDot = document.getElementById('user-color-dot');
+        const connectionStatus = document.getElementById('connectionStatus');
+        document.getElementById('codeButton').addEventListener('click', () => {
+            const input = document.getElementById('input');
+            const currentText = input.value.trim();
+
+            if (currentText.length > 0) {
+                input.value = `\`\`\`\n${currentText}\n\`\`\``;
+                input.focus();
+            }
+        });
+
+        input.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                form.dispatchEvent(new Event('submit'));
+            }
+        });
+
+
+        let isAtBottom = true;
+        let messageCount = 0;
+        let userIsScrolling = false;
+        let myColor = '#28a745'; // Default green for own messages
+        let myIsDarkText = false;
+
+        // Connection status handling
+        socket.on('connect', () => {
+            connectionStatus.textContent = 'Connected';
+            connectionStatus.className = 'connection-status connected';
+            setTimeout(() => {
+                connectionStatus.style.display = 'none';
+            }, 2000);
+        });
+
+        socket.on('disconnect', () => {
+            connectionStatus.textContent = 'Disconnected';
+            connectionStatus.className = 'connection-status disconnected';
+            connectionStatus.style.display = 'block';
+        });
+
+        // Handle user color assignment
+        socket.on('user color assigned', (colorData) => {
+            myColor = colorData.color;
+            myIsDarkText = colorData.isDarkText;
+            userColorDot.style.backgroundColor = myColor;
+        });
+
+        // Handle user list updates
+        socket.on('user list update', (data) => {
+            const userText = data.userCount === 1 ? 'user' : 'users';
+            userCountElement.textContent = `${data.userCount} ${userText} online`;
+        });
+
+        // Check if user is at bottom of chat
+        function checkScrollPosition() {
+            const threshold = 50;
+            const scrollTop = chatContainer.scrollTop;
+            const scrollHeight = chatContainer.scrollHeight;
+            const clientHeight = chatContainer.clientHeight;
+            
+            isAtBottom = scrollTop + clientHeight >= scrollHeight - threshold;
+            
+            // Show/hide scroll indicator based on position and message count
+            if (!isAtBottom && messageCount > 0) {
+                scrollIndicator.classList.add('show');
+            } else {
+                scrollIndicator.classList.remove('show');
+            }
+        }
+
+        // Scroll to bottom function
+        function scrollToBottom(force = false) {
+            if ((isAtBottom && !userIsScrolling) || force) {
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+                scrollIndicator.classList.remove('show');
+                isAtBottom = true;
+            }
+        }
+
+        // Track user scrolling behavior
+        let scrollTimeout;
+        chatContainer.addEventListener('scroll', () => {
+            userIsScrolling = true;
+            checkScrollPosition();
+            
+            // Reset scrolling flag after user stops scrolling
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(() => {
+                userIsScrolling = false;
+            }, 150);
+        });
+        
+        scrollIndicator.addEventListener('click', () => {
+            userIsScrolling = false;
+            scrollToBottom(true);
+        });
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const message = input.value.trim();
+            const file = fileInput.files[0];
+
+            if (message) {
+                addMessage(message, true, myColor, myIsDarkText); // Add own message immediately
+                socket.emit('chat message', message);
+                input.value = '';
+                // Always scroll to bottom when user sends a message
+                userIsScrolling = false;
+                scrollToBottom(true);
+            }
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    socket.emit('file upload', { fileName: file.name, fileData: event.target.result });
+                    fileInput.value = '';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        socket.on('chat message', (data) => {
+            // Handle both old string format and new object format for compatibility
+            if (typeof data === 'string') {
+                addMessage(data, false, '#007bff', false);
+            } else {
+                addMessage(data.message, false, data.color, data.isDarkText);
+            }
+        });
+
+        socket.on('file upload', (data) => {
+            addFileMessage(data);
+        });
+
+        function addMessage(msg, isSelf, color, isDarkText) {
+            const messageElement = document.createElement('li');
+            messageElement.className = 'message' + (isSelf ? ' self' : '') + (isDarkText ? ' dark-text' : '');
+            messageElement.style.backgroundColor = color;
+
+            if (msg.startsWith('```') && msg.endsWith('```')) {
+                const code = msg.slice(3, -3).trim();
+
+                const wrapper = document.createElement('div');
+                wrapper.style.position = 'relative';
+
+                const pre = document.createElement('pre');
+                const codeElem = document.createElement('code');
+                codeElem.textContent = code;
+                pre.appendChild(codeElem);
+                wrapper.appendChild(pre);
+
+                const copyButton = document.createElement('button');
+                copyButton.textContent = 'Copy';
+                copyButton.className = 'copy-button';
+                copyButton.onclick = () => {
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(code).then(() => {
+                            copyButton.textContent = 'Copied!';
+                            setTimeout(() => (copyButton.textContent = 'Copy'), 1500);
+                        }).catch(err => {
+                            fallbackCopy(code);
+                        });
+                    } else {
+                        fallbackCopy(code);
+                    }
+                };
+
+                function fallbackCopy(text) {
+                    const tempInput = document.createElement('textarea');
+                    tempInput.value = text;
+                    tempInput.style.position = 'fixed';
+                    tempInput.style.opacity = 0;
+                    document.body.appendChild(tempInput);
+                    tempInput.select();
+                    try {
+                        document.execCommand('copy');
+                        copyButton.textContent = 'Copied!';
+                    } catch (err) {
+                        alert('Copy failed. Please copy manually.');
+                    }
+                    document.body.removeChild(tempInput);
+                    setTimeout(() => (copyButton.textContent = 'Copy'), 1500);
+                }
+
+
+                wrapper.appendChild(copyButton);
+                messageElement.appendChild(wrapper);
+            } else {
+                messageElement.textContent = msg;
+            }
+
+            messages.appendChild(messageElement);
+            messageCount++;
+
+            setTimeout(() => {
+                scrollToBottom();
+                checkScrollPosition();
+            }, 10);
+        }
+
+
+
+
+        function addFileMessage(data) {
+            const messageElement = document.createElement('li');
+            messageElement.className = 'file-message' + (data.isDarkText ? ' dark-text' : '');
+            messageElement.style.backgroundColor = data.color || '#6f42c1';
+            
+            const link = document.createElement('a');
+            link.href = data.fileData;
+            link.download = data.fileName;
+            link.textContent = `📎 ${data.fileName}`;
+            
+            messageElement.appendChild(link);
+            messages.appendChild(messageElement);
+            messageCount++;
+            
+            setTimeout(() => {
+                scrollToBottom();
+                checkScrollPosition();
+            }, 10);
+        }
+
+        // Focus input on page load
+        window.addEventListener('load', () => {
+            input.focus();
+        });
+
+        // Add keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Ctrl/Cmd + End to scroll to bottom
+            if ((e.ctrlKey || e.metaKey) && e.key === 'End') {
+                e.preventDefault();
+                userIsScrolling = false;
+                scrollToBottom(true);
+            }
+            
+            // Ctrl/Cmd + Home to scroll to top
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Home') {
+                e.preventDefault();
+                chatContainer.scrollTop = 0;
+                userIsScrolling = true;
+            }
+        });
+    </script>
+</body>
+</html>
